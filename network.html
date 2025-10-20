@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Full Page Friendship Network</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+      font-family: system-ui, sans-serif;
+    }
+    svg {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    #resetBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(16,185,129,0.25);
+      z-index: 10;
+    }
+    #resetBtn:hover { filter: brightness(1.1); }
+    #legend {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #333;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .hub { background: #fbbf24; border: 2px solid #f59e0b; }
+    .regular { background: #60a5fa; border: 2px solid #2563eb; }
+    .removed { background: #ef4444; border: 2px solid #991b1b; }
+  </style>
+</head>
+<body>
+  <button id="resetBtn">Reset Network</button>
+  <div id="legend">
+    <span><span class="dot hub"></span>Hub (Alex)</span>
+    <span><span class="dot regular"></span>Regular Person</span>
+    <span><span class="dot removed"></span>Removed</span>
+  </div>
+  <svg id="net" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+    <g id="edges" stroke-width="3" stroke-linecap="round"></g>
+    <g id="nodes"></g>
+  </svg>
+
+  <script>
+    const NODES = [
+      { id: 'alex', x: 400, y: 200, label: 'Alex\n(Hub)', isHub: true },
+      { id: 'ben', x: 250, y: 150, label: 'Ben' },
+      { id: 'cara', x: 550, y: 150, label: 'Cara' },
+      { id: 'dan', x: 200, y: 300, label: 'Dan' },
+      { id: 'emma', x: 350, y: 350, label: 'Emma' },
+      { id: 'finn', x: 450, y: 350, label: 'Finn' },
+      { id: 'grace', x: 600, y: 300, label: 'Grace' },
+      { id: 'harry', x: 150, y: 200, label: 'Harry' },
+      { id: 'iris', x: 650, y: 200, label: 'Iris' }
+    ];
+
+    const EDGES = [
+      ['alex','ben'], ['alex','cara'], ['alex','dan'], ['alex','emma'], ['alex','finn'], ['alex','grace'],
+      ['ben','harry'], ['cara','iris'], ['dan','emma']
+    ];
+
+    const removed = new Set();
+
+    function makeEl(tag, attrs = {}, children = []) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      children.forEach(c => el.appendChild(c));
+      return el;
+    }
+
+    function render() {
+      const edgesG = document.getElementById('edges');
+      const nodesG = document.getElementById('nodes');
+      edgesG.innerHTML = '';
+      nodesG.innerHTML = '';
+
+      for (const [a, b] of EDGES) {
+        const A = NODES.find(n => n.id === a);
+        const B = NODES.find(n => n.id === b);
+        const visible = !(removed.has(a) || removed.has(b));
+        edgesG.appendChild(makeEl('line', {
+          x1: A.x, y1: A.y, x2: B.x, y2: B.y,
+          stroke: visible ? '#3b82f6' : '#e5e7eb',
+          opacity: visible ? 0.6 : 0.2
+        }));
+      }
+
+      for (const node of NODES) {
+        const isRemoved = removed.has(node.id);
+        const g = makeEl('g');
+        const circle = makeEl('circle', {
+          cx: node.x, cy: node.y, r: 35,
+          fill: isRemoved ? '#ef4444' : (node.isHub ? '#fbbf24' : '#60a5fa'),
+          stroke: node.isHub ? '#f59e0b' : '#2563eb',
+          'stroke-width': 3,
+          opacity: isRemoved ? 0.3 : 1,
+          style: 'cursor:pointer'
+        });
+        circle.addEventListener('click', () => toggle(node.id));
+
+        const text = makeEl('text', {
+          x: node.x, y: node.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+          fill: 'white', 'font-size': 18, 'font-weight': 'bold', 'pointer-events': 'none'
+        });
+        node.label.split('\n').forEach((line, i) => {
+          const tspan = makeEl('tspan', { x: node.x, dy: i === 0 ? 0 : 16 });
+          tspan.textContent = line;
+          text.appendChild(tspan);
+        });
+
+        g.appendChild(circle);
+        g.appendChild(text);
+        nodesG.appendChild(g);
+      }
+    }
+
+    function toggle(id) {
+      if (removed.has(id)) removed.delete(id); else removed.add(id);
+      render();
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      removed.clear();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
