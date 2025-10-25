@@ -2,653 +2,162 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Networks Everywhere! - MAV Presentation</title>
-  <!-- Tailwind via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React + ReactDOM UMD -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <!-- Babel for in-browser JSX transform -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Full Page Friendship Network</title>
   <style>
-    /* Fallback font smoothing */
-    html {
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+      font-family: system-ui, sans-serif;
     }
-    .emoji {
-      font-size: 3em;
-      margin: 10px;
+    svg {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    #resetBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(16,185,129,0.25);
+      z-index: 10;
+    }
+    #resetBtn:hover { filter: brightness(1.1); }
+    #legend {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #333;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
       display: inline-block;
-      animation: bounce 2s infinite;
+      margin-right: 6px;
     }
-    @keyframes bounce {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-10px);
-      }
-    }
-    .interactive-box {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      padding: 30px;
-      border-radius: 20px;
-      margin: 20px 0;
-      font-size: 2em;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    .presenter-name {
-      position: relative;
-      bottom: 5px;
-      right: 80px;
-      font-size: 1.8em;
-      color: #666;
-      font-weight: 500;
-      opacity: 0.9;
-    }
-    .presenter-name::before {
-      content: "👩‍🔬 ";
-      margin-right: 5px;
-    }
-    .quiz-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .quiz-option {
-            background: #667eea;
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 1.3em;
-            transition: all 0.3s;
-        }
-
-        .quiz-option:hover {
-            transform: scale(1.05);
-            background: #764ba2;
-        }
-
-        .fact-card {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            padding: 25px;
-            border-radius: 15px;
-            margin: 15px 0;
-            color: white;
-            font-size: 1.2em;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            transform: perspective(1000px) rotateY(0deg);
-            transition: transform 0.3s;
-        }
-
-        .fact-card:hover {
-            transform: perspective(1000px) rotateY(5deg) scale(1.02);
-        }
-
-
+    .hub { background: #fbbf24; border: 2px solid #f59e0b; }
+    .regular { background: #60a5fa; border: 2px solid #2563eb; }
+    .removed { background: #ef4444; border: 2px solid #991b1b; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-90">
-  <div id="root"></div>
+<body>
+  <button id="resetBtn">Reset Network</button>
+  <div id="legend">
+    <span><span class="dot hub"></span>Hub (Alex)</span>
+    <span><span class="dot regular"></span>Regular Person</span>
+    <span><span class="dot removed"></span>Removed</span>
+  </div>
+  <svg id="net" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+    <g id="edges" stroke-width="3" stroke-linecap="round"></g>
+    <g id="nodes"></g>
+  </svg>
 
-  <script type="text/babel">
+  <script>
+    const NODES = [
+      { id: 'alex', x: 400, y: 200, label: 'Alex\n(Hub)', isHub: true },
+      { id: 'ben', x: 250, y: 150, label: 'Ben' },
+      { id: 'cara', x: 550, y: 150, label: 'Cara' },
+      { id: 'dan', x: 200, y: 300, label: 'Dan' },
+      { id: 'emma', x: 350, y: 350, label: 'Emma' },
+      { id: 'finn', x: 450, y: 350, label: 'Finn' },
+      { id: 'grace', x: 600, y: 300, label: 'Grace' },
+      { id: 'harry', x: 150, y: 200, label: 'Harry' },
+      { id: 'iris', x: 650, y: 200, label: 'Iris' }
+    ];
 
-    const { useState } = React;
+    const EDGES = [
+      ['alex','ben'], ['alex','cara'], ['alex','dan'], ['alex','emma'], ['alex','finn'], ['alex','grace'],
+      ['ben','harry'], ['cara','iris'], ['dan','emma']
+    ];
 
-    const FriendshipNetwork = ({ removedNodes, setRemovedNodes }) => {
-      const nodes = [
-        { id: 'alex', x: 400, y: 200, label: 'Alex\n(Hub)', isHub: true },
-        { id: 'ben', x: 250, y: 150, label: 'Ben' },
-        { id: 'cara', x: 550, y: 150, label: 'Cara' },
-        { id: 'dan', x: 200, y: 300, label: 'Dan' },
-        { id: 'emma', x: 350, y: 350, label: 'Emma' },
-        { id: 'finn', x: 450, y: 350, label: 'Finn' },
-        { id: 'grace', x: 600, y: 300, label: 'Grace' },
-        { id: 'harry', x: 150, y: 200, label: 'Harry' },
-        { id: 'iris', x: 650, y: 200, label: 'Iris' }
-      ];
+    const removed = new Set();
 
-      const edges = [
-        ['alex', 'ben'],
-        ['alex', 'cara'],
-        ['alex', 'dan'],
-        ['alex', 'emma'],
-        ['alex', 'finn'],
-        ['alex', 'grace'],
-        ['ben', 'harry'],
-        ['cara', 'iris'],
-        ['dan', 'emma']
-      ];
-
-      const toggleNode = (nodeId) => {
-        const newRemoved = new Set(removedNodes);
-        if (newRemoved.has(nodeId)) {
-          newRemoved.delete(nodeId);
-        } else {
-          newRemoved.add(nodeId);
-        }
-        setRemovedNodes(newRemoved);
-      };
-
-      const resetNetwork = () => {
-        setRemovedNodes(new Set());
-      };
-
-      return (
-        <div className="space-y-6">
-
-          <div className="relative bg-white rounded-lg border-2 border-gray-200 p-4 overflow-x-auto">
-            <svg width="800" height="400" className="mx-auto block">
-              {edges.map(([source, target], i) => {
-                const sourceNode = nodes.find(n => n.id === source);
-                const targetNode = nodes.find(n => n.id === target);
-                const isVisible = !removedNodes.has(source) && !removedNodes.has(target);
-                return (
-                  <line
-                    key={i}
-                    x1={sourceNode.x}
-                    y1={sourceNode.y}
-                    x2={targetNode.x}
-                    y2={targetNode.y}
-                    stroke={isVisible ? "#3b82f6" : "#e5e7eb"}
-                    strokeWidth="3"
-                    opacity={isVisible ? 0.6 : 0.2}
-                  />
-                );
-              })}
-
-              {nodes.map(node => {
-                const isRemoved = removedNodes.has(node.id);
-                return (
-                  <g
-                    key={node.id}
-                    onClick={() => toggleNode(node.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <circle
-                      cx={node.x}
-                      cy={node.y}
-                      r="35"
-                      fill={isRemoved ? "#ef4444" : (node.isHub ? "#fbbf24" : "#60a5fa")}
-                      stroke={node.isHub ? "#f59e0b" : "#2563eb"}
-                      strokeWidth="3"
-                      opacity={isRemoved ? 0.3 : 1}
-                    />
-                    <text
-                      x={node.x}
-                      y={node.y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="white"
-                      fontSize="18"
-                      fontWeight="bold"
-                      style={{ pointerEvents: 'none', userSelect: 'none' }}
-                    >
-                      {node.label.split('\n').map((line, i) => (
-                        <tspan key={i} x={node.x} dy={i === 0 ? 0 : 16}>
-                          {line}
-                        </tspan>
-                      ))}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={resetNetwork}
-              className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold text-lg"
-            >
-              Reset Network
-            </button>
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-lg text-gray-700">
-              <strong>Legend:</strong> 🟡 Yellow = Hub (Alex with 6 friends) | 🔵 Blue = Regular person | 🔴 Red = Removed
-            </p>
-          </div>
-        </div>
-      );
-    };
-
-    const NetworkPresentation = () => {
-      const [currentSlide, setCurrentSlide] = useState(0);
-      const [removedNodes, setRemovedNodes] = useState(new Set());
-
-      // Add keyboard navigation
-React.useEffect(() => {
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowRight') {
-      nextSlide();
-    } else if (e.key === 'ArrowLeft') {
-      prevSlide();
+    function makeEl(tag, attrs = {}, children = []) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      children.forEach(c => el.appendChild(c));
+      return el;
     }
-  };
 
-  window.addEventListener('keydown', handleKeyDown);
+    function render() {
+      const edgesG = document.getElementById('edges');
+      const nodesG = document.getElementById('nodes');
+      edgesG.innerHTML = '';
+      nodesG.innerHTML = '';
 
-  // Cleanup function to remove listener when component unmounts
-  return () => {
-    window.removeEventListener('keydown', handleKeyDown);
-  };
-}, [currentSlide]); // Re-run effect when currentSlide changes
+      for (const [a, b] of EDGES) {
+        const A = NODES.find(n => n.id === a);
+        const B = NODES.find(n => n.id === b);
+        const visible = !(removed.has(a) || removed.has(b));
+        edgesG.appendChild(makeEl('line', {
+          x1: A.x, y1: A.y, x2: B.x, y2: B.y,
+          stroke: visible ? '#3b82f6' : '#e5e7eb',
+          opacity: visible ? 0.6 : 0.2
+        }));
+      }
 
-      const slides = [
-        {
-          title: "🌐 Networks Are Everywhere! 🌐",
-          subtitle: "How Mathematics Helps Us Understand Connected Systems",
-          content: (
-            <div className="text-center space-y-6">
-              <div className="emoji">🧮</div>
-              <div className="emoji">🦠</div>
-              <div className="emoji">🧬</div>
-              <div className="emoji">🧠</div>
-              <div className="interactive-box">
-                <p>From Your Friends to Your Gut Bacteria!</p>
-                <p>MAV Maths Talent Quest 2025</p>
-              </div>
-              <div className="presenter-name">Saritha Kodikara</div>
-            </div>
-          )
-        },
-        {
-          title: "About Me",
-          content: (
-            <div className="space-y-1">
-              <div className="flex items-center gap-8 transform hover:scale-105 transition-transform duration-300">
-                <div className="text-8xl animate-bounce" style={{animationDelay: '0s'}}>🏝️</div>
-                <div className="flex-1">
-                  <h3 className="text-4xl font-semibold mb-3 text-gray-800">I am from Sri Lanka</h3>
-                  <p className="text-2xl text-gray-600">Where it's summer ALL year long! 🌞</p>
-                </div>
-              </div>
+      for (const node of NODES) {
+        const isRemoved = removed.has(node.id);
+        const g = makeEl('g');
+        const circle = makeEl('circle', {
+          cx: node.x, cy: node.y, r: 35,
+          fill: isRemoved ? '#ef4444' : (node.isHub ? '#fbbf24' : '#60a5fa'),
+          stroke: node.isHub ? '#f59e0b' : '#2563eb',
+          'stroke-width': 3,
+          opacity: isRemoved ? 0.3 : 1,
+          style: 'cursor:pointer'
+        });
+        circle.addEventListener('click', () => toggle(node.id));
 
-              <div className="flex items-center gap-8 transform hover:scale-105 transition-transform duration-300">
-                <div className="text-8xl animate-bounce" style={{animationDelay: '0.5s'}}>🦘</div>
-                <div className="flex-1">
-                  <h3 className="text-4xl font-semibold mb-3 text-gray-800">Moved to Australia in 2017 for PhD</h3>
-                  <p className="text-2xl text-gray-600">Discovered Melbourne's "four seasons in one day"! ☀️🌧️❄️🍂</p>
-                </div>
-              </div>
+        const text = makeEl('text', {
+          x: node.x, y: node.y, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+          fill: 'white', 'font-size': 18, 'font-weight': 'bold', 'pointer-events': 'none'
+        });
+        node.label.split('\n').forEach((line, i) => {
+          const tspan = makeEl('tspan', { x: node.x, dy: i === 0 ? 0 : 16 });
+          tspan.textContent = line;
+          text.appendChild(tspan);
+        });
 
-              <div className="flex items-center gap-8 transform hover:scale-105 transition-transform duration-300">
-                <div className="text-8xl animate-bounce" style={{animationDelay: '1s'}}>🦠</div>
-                <div className="flex-1">
-                  <h3 className="text-4xl font-semibold mb-3 text-gray-800">
-                    Started Postdoc in 2021
-                    <span className="ml-3 px-3 py-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-lg rounded-full">
-                      Statistics + Microbes
-                    </span>
-                  </h3>
-                  <p className="text-2xl text-gray-600">Using statistics to understand the tiny world of gut bacteria! 📊</p>
-                </div>
-              </div>
+        g.appendChild(circle);
+        g.appendChild(text);
+        nodesG.appendChild(g);
+      }
+    }
 
-              <div className="flex items-center gap-8 transform hover:scale-105 transition-transform duration-300">
-                <div className="text-8xl animate-bounce" style={{animationDelay: '1.5s'}}>🏕️</div>
-                <div className="flex-1">
-                  <h3 className="text-4xl font-semibold mb-3 text-gray-800">Outside of work...</h3>
-                  <p className="text-2xl text-gray-600">Love camping and exploring Australia's amazing outdoors! 🏔️🌲</p>
-                </div>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Why I Love Maths",
-          content: (
-            <div className="space-y-8 text-center">
-              <div className="text-6xl">✨</div>
-              <div className="text-3xl text-gray-800 space-y-4">
-                <p className="text-5xl font-semibold">Maths is my adventure map — every question is a mystery waiting to be solved!</p>
-              </div>
-              <p className="text-4xl text-gray-600 mt-8">It teaches me to think clearly and imagine boldly.</p>
-              <p className="text-4xl text-gray-600 mt-8">Every problem is a puzzle and every solution feels like a tiny victory! 🧩🎉</p>
-            </div>
-          )
-        },
-        {
-          title: "My Current Work",
-          content: (
-            <div className="space-y-6">
-              <div className="flex items-center gap-6">
-                <div className="text-8xl">🦠</div>
-                <div>
-                  <h3 className="text-4xl font-semibold mb-3">Microbiome Research</h3>
-                  <p className="text-2xl text-gray-700">Applying statistics to explore how the trillions of bacteria within us and in our environment interact and influence life.</p>
-                </div>
-              </div>
+    function toggle(id) {
+      if (removed.has(id)) removed.delete(id); else removed.add(id);
+      render();
+    }
 
-              <div className="flex items-center gap-6 mt-8">
-                <div className="text-8xl">🕸️</div>
-                <div>
-                  <h3 className="text-4xl font-semibold mb-3">Focus: Network modelling</h3>
-                  <p className="text-2xl text-gray-700">How do these bacteria interact with each other? Who's important?</p>
-                </div>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "What is a Network?",
-          content: (
-            <div className="space-y-6">
-              <p className="text-4xl text-gray-800 mb-6">Let's think about FRIENDSHIP networks!</p>
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      removed.clear();
+      render();
+    });
 
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <h3 className="text-4xl font-semibold mb-4">In a network:</h3>
-                <ul className="text-xl space-y-3 text-gray-700">
-                  <li className="flex items-center gap-3">
-                    <span className="text-3xl">👤</span>
-                    <span className="text-2xl"><strong>Nodes</strong> = People</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-3xl">🤝</span>
-                    <span className="text-2xl"><strong>Edges</strong> = Friendships</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-3xl">⭐</span>
-                    <span className="text-2xl"><strong>Hub</strong> = Someone with LOTS of friends</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Interactive: Friendship Network",
-          content: (
-            <div className="space-y-6">
-              <div className="flex justify-center items-center gap-6 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg">
-                <div className="text-center">
-                  <img 
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://sarithakodikara.github.io/Outreach/network.html" 
-                    alt="QR Code for more information"
-                    className="mx-auto border-4 border-white shadow-lg rounded-lg"
-                  />
-                  <p className="text-xl font-semibold text-gray-700 mt-3">Scan me!</p>
-                </div>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Interactive: Friendship Network",
-          content: <FriendshipNetwork removedNodes={removedNodes} setRemovedNodes={setRemovedNodes} />
-        },
-        {
-          title: "What Happened?",
-          content: (
-            <div className="space-y-6">
-              <p className="text-3xl text-gray-800 mb-6">When we removed the hub (the person with many friends)...</p>
-
-              <div className="bg-red-50 p-6 rounded-lg space-y-4">
-                <p className="text-2xl text-gray-800">❌ The network broke into smaller groups</p>
-                <p className="text-2xl text-gray-800">❌ Some people became completely isolated</p>
-                <p className="text-2xl text-gray-800">❌ Information can't flow as easily anymore</p>
-              </div>
-
-              <div className="bg-green-50 p-6 rounded-lg mt-6">
-                <p className="text-2xl text-gray-800 font-semibold">But when we removed someone with fewer connections...</p>
-                <p className="text-2xl text-gray-800 mt-2">✅ The network stayed mostly connected!</p>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Quick Check: Do YOU Know a Hub? 🎯",
-          content: (
-            <div className="space-y-6">
-               <div class="interactive-box">
-                <p className="text-4xl text-gray-800 font-semibold">Raise your hand if...</p>
-            </div>
-
-            <div class="quiz-options">
-                <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
-                    You know someone who seems to know EVERYONE at school
-                </div>
-                <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
-                    You follow someone on social media with 1000+ followers
-                </div>
-                <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
-                    You have that one friend who always organises group events
-                </div>
-                <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
-                    Your teacher knows every student's name in the school
-                </div>
-            </div>
-
-              <p className="text-center text-3xl font-bold mt-6">Those are ALL hubs! 🌟</p>
-            
-            </div>
-          )
-        },
-        {
-          title: "Real-World Examples",
-          subtitle: "Where Do We See Networks?",
-          content: (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-purple-50 p-6 rounded-lg">
-                <div className="text-5xl mb-3">💉</div>
-                <h3 className="text-4xl font-semibold mb-2">Disease Control</h3>
-                <p className="text-2xl text-gray-700">Healthcare workers got COVID vaccines first - they're hubs in contact networks!</p>
-              </div>
-
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <div className="text-5xl mb-3">📱</div>
-                <h3 className="text-4xl font-semibold mb-2">Social Media</h3>
-                <p className="text-2xl text-gray-700">Influencers are hubs - that's why companies pay them to advertise!</p>
-              </div>
-
-              <div className="bg-green-50 p-6 rounded-lg">
-                <div className="text-5xl mb-3">🦠</div>
-                <h3 className="text-4xl font-semibold mb-2">Gut Microbiome</h3>
-                <p className="text-2xl  text-gray-700">Some bacteria are hubs that affect many others - they're key to our health!</p>
-              </div>
-
-              <div className="bg-yellow-50 p-6 rounded-lg">
-                <div className="text-5xl mb-3">🚂</div>
-                <h3 className="text-4xl font-semibold mb-2">Transport</h3>
-                <p className="text-2xl text-gray-700">Flinders Street Station is a hub - remove it, and Melbourne’s trains stop!</p>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Why Identifying Hubs Matters",
-          content: (
-            <div className="space-y-5">
-              <div className="bg-red-50 p-5 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">⚠️</span> Vulnerability & Resilience
-                </h3>
-                <p className="text-2xl text-gray-700">Hubs are critical points - losing them can break the whole network</p>
-              </div>
-
-              <div className="bg-orange-50 p-5 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">📈</span> Diffusion & Spreading
-                </h3>
-                <p className="text-2xl text-gray-700">Information, diseases, or trends spread faster through hubs</p>
-              </div>
-
-              <div className="bg-green-50 p-5 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">🎯</span> Targeted Interventions
-                </h3>
-                <p className="text-2xl text-gray-700">Vaccinating or treating hub individuals gives the biggest benefit</p>
-              </div>
-
-              <div className="bg-blue-50 p-5 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">⚡</span> Optimization & Efficiency
-                </h3>
-                <p className="text-2xl text-gray-700">Strengthening hubs improves entire systems (transport, communication, etc.)</p>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "How Mathematics Helps",
-          content: (
-            <div className="space-y-6">
-              <p className="text-4xl text-gray-800 mb-4">Mathematics gives us tools to:</p>
-
-              <div className="space-y-4">
-                <div className="bg-purple-50 p-5 rounded-lg">
-                  <h3 className="text-4xl font-semibold mb-2">📊 Measure Importance</h3>
-                  <p className="text-2xl text-gray-700">Calculate exactly how "central" or "important" each node is</p>
-                  <p className="text-xl text-gray-600 mt-2 italic">Using measures like degree centrality (Who has the most friends?) and betweenness (Who is the messenger)</p>
-                </div>
-
-                <div className="bg-blue-50 p-5 rounded-lg">
-                  <h3 className="text-4xl font-semibold mb-2">🔮 Predict Behavior</h3>
-                  <p className="text-2xl text-gray-700">Model how things will spread through a network</p>
-                  <p className="text-xl text-gray-600 mt-2 italic">Like predicting disease outbreaks or viral content</p>
-                </div>
-
-                <div className="bg-green-50 p-5 rounded-lg">
-                  <h3 className="text-4xl font-semibold mb-2">🎯 Optimise Strategies</h3>
-                  <p className="text-2xl text-gray-700">Find the best nodes to target for maximum impact</p>
-                  <p className="text-xl text-gray-600 mt-2 italic">Using algorithms and statistical models</p>
-                </div>
-              </div>
-            </div>
-          )
-        },
-        {
-          title: "Why Hubs Matters for Gut Bacteria",
-          content: (
-
-              <div className="space-y-4">
-                <div className="interactive-box"> 
-                  <h3 className="text-4xl font-semibold mb-2"> 🦠 Math helps us find the “boss” bacteria</h3>
-                  <p className="text-2xl text-gray-700">Bacteria send chemical messages → to your brain → changing how you feel and what you crave</p>
-                </div>
-
-                <div class="bg-purple-50 p-1 rounded-lg">
-                <h3 className="text-2xl mb-2"> If the “boss” bacteria <strong>LOVE sugar</strong> 🍭</h3>
-                <p className="text-center text-2xl text-gray-700">They might actually make you crave sweets to feed themselves!</p>
-                <p className="text-center text-xl text-gray-600 mt-2 italic">It's like they're ordering takeout using YOUR brain! 🤔</p>
-                 <p className="text-center text-4xl">🦠 → 💬 → 🧠 → 🍕</p>
-            </div>
-
-
-            <div class="bg-blue-50 p-1 rounded-lg">
-                <h3 className="text-2xl mb-2"> Gut bacteria can influence your <strong>mood</strong>, <strong>energy</strong>, <strong>cravings</strong>, and even your <strong>sleep</strong>.</h3>
-                <p className="text-center text-2xl text-gray-700">That’s why finding the hubs matters - they are the hidden leaders of your inner world. 🌍🧠</p>
-            </div>
-
-            </div>
-
-
-
-
-          )
-        },
-        {
-          title: "The Power of Mathematical Thinking",
-          content: (
-            <div className="text-center space-y-8">
-              <div className="text-7xl">🧮</div>
-              <div className="text-3xl text-gray-800 space-y-4">
-                <p>Mathematics helps us see patterns we can't see with our eyes</p>
-                <p className="text-3xl text-blue-600 font-semibold">It turns complex problems into solvable puzzles</p>
-                <p className="text-2xl">Whether it's your gut bacteria, your social network, or global disease control...</p>
-                <p className="text-5xl font-bold mt-6">Maths shows us the hidden connections!</p>
-              </div>
-            </div>
-            
-          )
-        },
-        {
-          title: "Thank You!",
-          content: (
-            <div className="text-center space-y-8">
-              <div className="text-8xl">🙏</div>
-              <p className="text-3xl text-gray-800">Questions?</p>
-              <div className="text-xl text-gray-600 space-y-4 mt-8">
-                <p>Keep exploring the hidden connections around you!</p>
-                <p className="text-2xl">🌐 Everything is connected 🕸️</p>
-              </div>
-            </div>
-          )
-        }
-      ];
-
-      const nextSlide = () => {
-        if (currentSlide < slides.length - 1) {
-          setCurrentSlide(currentSlide + 1);
-          setRemovedNodes(new Set());
-        }
-      };
-
-      const prevSlide = () => {
-        if (currentSlide > 0) {
-          setCurrentSlide(currentSlide - 1);
-          setRemovedNodes(new Set());
-        }
-      };
-
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-8">
-          <div className="w-full bg-white rounded-2xl shadow-2xl flex flex-col" style={{width: '1920px', height: '1080px', maxWidth: '95vw', maxHeight: '95vh'}}>
-            <div className="mb-8 flex-shrink-0 px-16 pt-12">
-              <h1 className="text-5xl font-bold text-gray-800 mb-3">
-                {slides[currentSlide].title}
-              </h1>
-              {slides[currentSlide].subtitle && (
-                <p className="text-2xl text-gray-600">{slides[currentSlide].subtitle}</p>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto mb-8 flex items-center justify-center px-16">
-              <div className="w-full">
-                {slides[currentSlide].content}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t pt-8 pb-12 px-16 flex-shrink-0">
-              <button
-                onClick={prevSlide}
-                disabled={currentSlide === 0}
-                className="flex items-center gap-3 px-8 py-4 bg-blue-500 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors text-xl font-semibold"
-              >
-                <span className="text-3xl" aria-hidden="true">←</span>
-                <span>Previous</span>
-              </button>
-
-              <div className="text-gray-600 text-xl font-medium">
-                Slide {currentSlide + 1} of {slides.length}
-              </div>
-
-              <button
-                onClick={nextSlide}
-                disabled={currentSlide === slides.length - 1}
-                className="flex items-center gap-3 px-8 py-4 bg-blue-500 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors text-xl font-semibold"
-              >
-                <span>Next</span>
-                <span className="text-3xl" aria-hidden="true">→</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<NetworkPresentation />);
+    render();
   </script>
 </body>
 </html>
