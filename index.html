@@ -100,6 +100,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
+
     const { useState } = React;
 
     const FriendshipNetwork = ({ removedNodes, setRemovedNodes }) => {
@@ -225,6 +226,24 @@
       const [currentSlide, setCurrentSlide] = useState(0);
       const [removedNodes, setRemovedNodes] = useState(new Set());
 
+      // Add keyboard navigation
+React.useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowRight') {
+      nextSlide();
+    } else if (e.key === 'ArrowLeft') {
+      prevSlide();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+
+  // Cleanup function to remove listener when component unmounts
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [currentSlide]); // Re-run effect when currentSlide changes
+
       const slides = [
         {
           title: "🌐 Networks Are Everywhere! 🌐",
@@ -314,7 +333,7 @@
               <div className="flex items-center gap-6 mt-8">
                 <div className="text-8xl">🕸️</div>
                 <div>
-                  <h3 className="text-4xl font-semibold mb-3">Focus: Networks</h3>
+                  <h3 className="text-4xl font-semibold mb-3">Focus: Network modelling</h3>
                   <p className="text-2xl text-gray-700">How do these bacteria interact with each other? Who's important?</p>
                 </div>
               </div>
@@ -343,6 +362,23 @@
                     <span className="text-2xl"><strong>Hub</strong> = Someone with LOTS of friends</span>
                   </li>
                 </ul>
+              </div>
+            </div>
+          )
+        },
+        {
+          title: "Interactive: Friendship Network",
+          content: (
+            <div className="space-y-6">
+              <div className="flex justify-center items-center gap-6 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg">
+                <div className="text-center">
+                  <img 
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://sarithakodikara.github.io/Outreach/network.html" 
+                    alt="QR Code for more information"
+                    className="mx-auto border-4 border-white shadow-lg rounded-lg"
+                  />
+                  <p className="text-xl font-semibold text-gray-700 mt-3">Scan me!</p>
+                </div>
               </div>
             </div>
           )
@@ -383,7 +419,7 @@
                     You know someone who seems to know EVERYONE at school
                 </div>
                 <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
-                    You follow someone on social media with 100K+ followers
+                    You follow someone on social media with 1000+ followers
                 </div>
                 <div class="text-2xl quiz-option" onclick="this.style.background='#28a745'">
                     You have that one friend who always organises group events
@@ -435,28 +471,28 @@
             <div className="space-y-5">
               <div className="bg-red-50 p-5 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">⚠️ Vulnerability & Resilience</span>
+                  <span className="text-4xl">⚠️</span> Vulnerability & Resilience
                 </h3>
                 <p className="text-2xl text-gray-700">Hubs are critical points - losing them can break the whole network</p>
               </div>
 
               <div className="bg-orange-50 p-5 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">📈 Diffusion & Spreading </span>
+                  <span className="text-4xl">📈</span> Diffusion & Spreading
                 </h3>
                 <p className="text-2xl text-gray-700">Information, diseases, or trends spread faster through hubs</p>
               </div>
 
               <div className="bg-green-50 p-5 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">🎯 Targeted Interventions </span>
+                  <span className="text-4xl">🎯</span> Targeted Interventions
                 </h3>
                 <p className="text-2xl text-gray-700">Vaccinating or treating hub individuals gives the biggest benefit</p>
               </div>
 
               <div className="bg-blue-50 p-5 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <span className="text-4xl">⚡Optimization & Efficiency </span> 
+                  <span className="text-4xl">⚡</span> Optimization & Efficiency
                 </h3>
                 <p className="text-2xl text-gray-700">Strengthening hubs improves entire systems (transport, communication, etc.)</p>
               </div>
@@ -541,10 +577,10 @@
           content: (
             <div className="text-center space-y-8">
               <div className="text-8xl">🙏</div>
-              <p className="text-6xl text-gray-800 font-semibold">Questions?</p>
-              <div className="text-2xl text-gray-600 space-y-4 mt-8">
-                <p className="text-2xl">Keep exploring the hidden connections around you!</p>
-                <p className="text-4xl">🌐 Everything is connected 🕸️</p>
+              <p className="text-3xl text-gray-800">Questions?</p>
+              <div className="text-xl text-gray-600 space-y-4 mt-8">
+                <p>Keep exploring the hidden connections around you!</p>
+                <p className="text-2xl">🌐 Everything is connected 🕸️</p>
               </div>
             </div>
           )
